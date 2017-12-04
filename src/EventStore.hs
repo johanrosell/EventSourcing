@@ -1,12 +1,15 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module EventStore (EventStore(..), StateStore(..), Result, handleCommand) where
+module EventStore (EventStore(..), StateStore(..), Result, handleCommand, errorResult) where
 
 import           Aggregate                  (Aggregate (..), AggregateId,
                                              Command (exec), Envelope (..))
-import           Control.Monad.Trans.Except (ExceptT)
+import           Control.Monad.Trans.Except (ExceptT (ExceptT))
 
 type Result = ExceptT String IO
+
+errorResult :: String -> Result a
+errorResult s = ExceptT $ return (Left s)
 
 data EventStore e = EventStore
      { insert        :: Envelope [e] -> Result ()
@@ -26,8 +29,9 @@ handleCommand stateStore eventStore (aggrId, command) = do
     let (Envelope _ v state) =  buildFromZero' eventEnvelopes
     -- Execute the command on the current state
     case exec state command of
-        []        -> return ()
-        newEvents -> do
+        Left err        -> errorResult err
+        Right []        -> return ()
+        Right newEvents -> do
             -- Store the new events and state
             insert eventStore (Envelope aggrId (v + 1) newEvents)
-            updateState stateStore (Envelope aggrId (v + (fromIntegral $ length newEvents)) (build state newEvents))
+            updateState stateStore (Envelope aggrId (v + (length newEvents)) (build state newEvents))

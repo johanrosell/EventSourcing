@@ -6,7 +6,7 @@ type AggregateId = String
 
 data Envelope e = Envelope
     { aggregateId :: AggregateId
-    , version     :: Word
+    , version     :: Int
     , item        :: e }
     deriving (Show)
 
@@ -41,4 +41,4 @@ class (Zero a) => Aggregate a e where
         foldl increment'' (Envelope "" 0 zero) es
 
 class (Aggregate a e) => Command a e c where
-    exec :: a -> c -> [e]
+    exec :: a -> c -> Either String [e]

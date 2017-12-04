@@ -3,14 +3,12 @@
 
 module Main where
 
-import           Aggregate
+import           Aggregate                  (AggregateId)
 import           Control.Monad.Trans.Except (runExceptT)
-import           Data.Aeson                 (encode)
 import           Data.IORef
-import           Data.List                  (head)
-import           EventStore                 (Envelope (..), EventStore (..),
-                                             Result)
-import           InMemoryEventStore
+import           EventStore                 (EventStore (..), Result,
+                                             StateStore (..), handleCommand)
+import           InMemory
 import           Person
 
 main :: IO ()
@@ -19,23 +17,19 @@ main = do
     eventsRef <- newIORef []
     statesRef <- newIORef []
 
-    let EventStore { commit = commit
-                   , loadEvents = load
-                   , loadAllEvents = loadAll
-                   , getReadState = getState
-                   , getReadStates = getStates
-                   , updateReadState = updateState } = mkInMemoryEventStore eventsRef statesRef :: EventStore Event Person
+    let eventStore = mkInMemoryEventStore eventsRef :: EventStore Event
+    let stateStore = mkInMemoryStateStore statesRef :: StateStore Person
+    let handleCommand' = handleCommand stateStore eventStore :: (AggregateId, Cmd) -> Result ()
 
-    let events = [ Envelope { aggregateId = "123"
-                            , eventId = 1
-                            , item = Created $ Person { name = "Johan"
-                                                      , age = 37 } } ]
+    let command = Create $ Person { name = "Johan", age = 2 }
 
-    runExceptT $ commit (head events)
-    readState' <- runExceptT $ getState "123"
-    case readState' of
-        Right (Just s) -> putStrLn $ "State: "-- ++ (show s)
+    runExceptT $ handleCommand' ("123", command)
+
+    readState <- runExceptT $ loadState stateStore "123"
+    case readState of
+        Right (Just s) -> putStrLn $ "State: " ++ (show s)
+        Right Nothing  -> putStrLn $ "Error: No state was returned"
         Left err       -> putStrLn err
-    --
-    --putStrLn $ "State: " ++ (show $ encode state)
-    return ()
+
+    events <- runExceptT $ loadAllEvents eventStore ()
+    putStrLn $ "Events: "  ++ show events
