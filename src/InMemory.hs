@@ -12,9 +12,8 @@ import           EventStore                (EventStore (EventStore), Result,
                                             errorResult)
 
 getAll :: IORef [Envelope a] -> Result [Envelope a]
-getAll ioRef = do
-    xs <- lift $ readIORef ioRef
-    return xs
+getAll ioRef =
+    lift $ readIORef ioRef
 
 getForId :: IORef [Envelope a] -> String -> Result [Envelope a]
 getForId ioRef aggrId = do
@@ -29,22 +28,22 @@ find ioRef aggrId = do
         x:_ -> return $ Just x
 
 insert :: IORef [Envelope a] -> Envelope [a] -> Result ()
-insert ref (Envelope aid v events) = do
+insert ref (Envelope aid v d events) = do
     currentEvents <- getForId ref aid
     let currentVersion = case currentEvents of
                             [] -> 0
                             xs -> version (maximumBy (compare `on` version) xs)
-    case v == currentVersion + 1 of
-        False -> errorResult $ "Expected current version of aggregate '" ++ aid ++ "' to be '" ++ (show $ v + 1) ++ "', but it was '" ++ (show currentVersion) ++ "'"
-        True -> return ()
+    if v == currentVersion + 1 then return ()
+    else errorResult $ "Expected current version of aggregate '" ++ aid ++ "' to be '" ++ show (v + 1) ++ "', but it was '" ++ show currentVersion ++ "'"
+
     -- Put events in separate envelopes with distinct versions
-    let envelopes = mapWithIndex (\x i -> Envelope aid (v + i) x) events
-    lift $ modifyIORef ref (\xs -> xs ++ envelopes)
+    let envelopes = mapWithIndex (\x i -> Envelope aid (v + i) d x) events
+    lift $ modifyIORef ref (++ envelopes)
 
 update :: IORef [Envelope a] -> Envelope a -> Result ()
 update ref state = do
     xs <- lift $ readIORef ref
-    let xs' = state:(filter (\x -> aggregateId x /= aggregateId state) xs)
+    let xs' = state : filter (\x -> aggregateId x /= aggregateId state) xs
     lift $ writeIORef ref xs'
     return ()
 
