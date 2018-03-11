@@ -2,47 +2,28 @@
 
 module Aggregate where
 
-import Data.Time (UTCTime(..), secondsToDiffTime)
-import Data.Time.Calendar( Day(..) )
+import           Data.Foldable      (foldl')
+import           Data.Time          (UTCTime (..), secondsToDiffTime)
+import           Data.Time.Calendar (Day (..))
 
+-- | Types
 type AggregateId = String
 
-zeroDate = UTCTime (ModifiedJulianDay 0) (secondsToDiffTime 0)
-
-data Envelope e = Envelope
-    { aggregateId :: AggregateId
-    , version     :: Int
-    , date        :: UTCTime
-    , item        :: e }
-    deriving (Show)
-
-instance Functor Envelope where
-    fmap f (Envelope aid eid date a) = Envelope aid eid date (f a)
+-- | Classes
 
 -- zero is an initial state of an aggregate before any events have occurred.
 class Zero a where
     zero :: a
 
--- A state representation for the event type 'e'
-class (Zero a) => Aggregate a e where
-    increment :: a -> e -> a
+instance Zero UTCTime where
+  zero = UTCTime (ModifiedJulianDay 0) (secondsToDiffTime 0)
 
-    build :: a -> [e] -> a
-    build = foldl increment
+-- Represents the relationship between event e and state s.
+class (Zero s) => Aggregate e s where
+    applyEvent :: s -> e -> s
 
-    -- Applies events to the zero state
-    buildFromZero :: [e] -> a
-    buildFromZero = foldl increment zero
+    foldEvents :: s -> [e] -> s
+    foldEvents = foldl' applyEvent
 
-    -- Applies an enveloped event to an enveloped state
-    increment'' :: Envelope a -> Envelope e -> Envelope a
-    increment'' (Envelope _ v _ state) (Envelope aid _ d event) =
-        Envelope aid (v + 1) d (increment state event)
-
-    -- Applies enveloped events to the zero state
-    buildFromZero' :: [Envelope e] -> Envelope a
-    buildFromZero' =
-        foldl increment'' (Envelope "" 0 zeroDate zero)
-
-class (Aggregate a e) => Command a e c where
-    exec :: a -> c -> Either String [e]
+class (Aggregate e s) => Command s e c where
+    exec :: s -> c -> Either String [e]

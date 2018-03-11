@@ -3,7 +3,8 @@
 
 module Person where
 
-import           Aggregate    (Aggregate, Command (exec), Zero, increment, zero)
+import           Aggregate    (Aggregate, Command (exec), Zero, applyEvent,
+                               zero)
 import           Data.Aeson   (ToJSON)
 import           GHC.Generics
 
@@ -26,10 +27,10 @@ data Cmd =
 instance Zero Person where
     zero = Person { name = "", age = 0 }
 
-instance Aggregate Person Event where
-    increment s (Aged x)    = Person (name s) (age s + x)
-    increment _ (Created p) = p
-    increment _ Deleted     = zero
+instance Aggregate Event Person where
+    applyEvent s (Aged x)    = Person (name s) (age s + x)
+    applyEvent _ (Created p) = p
+    applyEvent _ Deleted     = zero
 
 instance Command Person Event Cmd where
     exec _ c =

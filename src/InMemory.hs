@@ -2,11 +2,11 @@
 
 module InMemory (mkInMemoryEventStore, mkInMemoryStateStore) where
 
-import           Aggregate                 (Envelope (Envelope, aggregateId, version))
 import           Control.Monad.Trans.Class (lift)
 import           Data.Function             (on)
 import           Data.IORef
 import           Data.List                 (maximumBy)
+import           Envelope                  (Envelope (Envelope, aggregateId, version))
 import           EventStore                (EventStore (EventStore), Result,
                                             StateStore (StateStore),
                                             errorResult)
