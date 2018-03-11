@@ -52,13 +52,13 @@ mkInMemoryEventStore events =
     EventStore
         (insert events)
         (getForId events)
-        (\_ -> getAll events)
+        (getAll events)
 
 mkInMemoryStateStore :: IORef [Envelope s] -> StateStore s
 mkInMemoryStateStore states =
     StateStore
         (find states)
-        (\_ -> getAll states)
+        (getAll states)
         (update states)
 
 -- helpers

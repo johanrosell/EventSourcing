@@ -12,7 +12,7 @@ newtype Event = ValueRegistered Int
   deriving (Generic, Show, Eq)
 
 newtype State = State { eventLog :: [Event]}
-    deriving (Generic, Show)
+    deriving (Generic, Show, Eq)
 
 newtype Cmd = RegisterValue Int
 

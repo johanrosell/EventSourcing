@@ -7,18 +7,19 @@ import           Data.Time          (UTCTime (..), secondsToDiffTime)
 import           Data.Time.Calendar (Day (..))
 
 -- | Types
+
 type AggregateId = String
 
 -- | Classes
 
--- zero is an initial state of an aggregate before any events have occurred.
+-- | zero is an initial state of an aggregate before any events have occurred.
 class Zero a where
     zero :: a
 
 instance Zero UTCTime where
   zero = UTCTime (ModifiedJulianDay 0) (secondsToDiffTime 0)
 
--- Represents the relationship between event e and state s.
+-- | Represents the relationship between event e and state s.
 class (Zero s) => Aggregate e s where
     applyEvent :: s -> e -> s
 

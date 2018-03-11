@@ -8,6 +8,7 @@ import           Data.Time          (UTCTime (UTCTime), secondsToDiffTime)
 import           Data.Time.Calendar (Day (ModifiedJulianDay))
 
 -- | Types
+
 data Envelope a = Envelope
     { aggregateId :: String
     , version     :: Int
@@ -16,6 +17,7 @@ data Envelope a = Envelope
     deriving (Show)
 
 -- | Instances
+
 instance (Aggregate e s) => Aggregate (Envelope e) (Envelope s) where
   applyEvent (Envelope aid _ _ s) (Envelope _ v d e) = Envelope aid v d (applyEvent s e)
 
