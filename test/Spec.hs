@@ -1,18 +1,54 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 module Main where
 
-import           Aggregate                  (AggregateId)
+import           Aggregate                  (Aggregate (foldEvents),
+                                             AggregateId, Zero (zero))
 import           Control.Monad.Trans.Except (runExceptT)
 import           Data.IORef
 import           Data.Time                  (UTCTime, getCurrentTime)
-import           EventStore                 (EventStore (..), Result,
-                                             StateStore (..), handleCommand)
 import           InMemory
-import           Person
+import           Store                      (EventStore (..), Result,
+                                             StateStore (..), handleCommand)
+import           System.Exit
+import           Test.QuickCheck
+import           Test.QuickCheck.All
+import           Types
+
+-- ####################
+-- Aggregate Properties
+-- ####################
+
+prop_all_events_folded_onto_state_in_order :: Int -> Bool
+prop_all_events_folded_onto_state_in_order eventCount =
+  let events = map ValueRegistered [1..eventCount]
+      state = foldEvents zero events :: State
+  in eventLog state == events
+
+-- ####################
+-- EventStore Properties
+-- ####################
+
+
+-- ####################
+-- Helpers
+-- ####################
+
+return [] -- strangely, without this QuickCheck will not find the properties
+runTests = $quickCheckAll
+
+-- ####################
+-- main
+-- ####################
 
 main :: IO ()
 main = do
+  success <- runTests
+  if success then exitSuccess
+  else exitFailure
+
+{- main = do
 
     -- create in-memory storage for events and states
     eventsRef <- newIORef []
@@ -21,7 +57,7 @@ main = do
     let personStates = mkInMemoryStateStore statesRef :: StateStore Person
 
     -- create the command handler for Person events
-    let handlePersonCommand = handleCommand personStates personEvents :: (AggregateId, UTCTime, Cmd) -> Result ()
+    let handlePersonCommand = handleCommand personStates personEvents :: (AggregateId, UTCTime, Cmd) -> EventStore.Result ()
 
     -- Create a command
     let command = Create Person { name = "Johan", age = 2 }
@@ -43,4 +79,4 @@ main = do
 
     -- retrieve and print all events
     events <- runExceptT $ loadAllEvents personEvents ()
-    putStrLn $ "Events: "  ++ show events
+    putStrLn $ "Events: "  ++ show events -}

@@ -7,7 +7,7 @@ import           Data.Function             (on)
 import           Data.IORef
 import           Data.List                 (maximumBy)
 import           Envelope                  (Envelope (Envelope, aggregateId, version))
-import           EventStore                (EventStore (EventStore), Result,
+import           Store                     (EventStore (EventStore), Result,
                                             StateStore (StateStore),
                                             errorResult)
 

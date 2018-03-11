@@ -16,7 +16,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Aggregate
-                     , EventStore
+                     , Store
                      , Envelope
                      , InMemory
 
@@ -30,10 +30,11 @@ library
 test-suite eventsourcing-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
-  other-modules:             Person
+  other-modules:       Types
   main-is:             Spec.hs
   build-depends:       base
                      , eventsourcing
+                     , QuickCheck
                      , transformers
                      , aeson
                      , datetime

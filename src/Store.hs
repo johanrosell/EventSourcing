@@ -1,6 +1,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
- module EventStore where
+ module Store where
 
 import           Aggregate                  (Aggregate (..), AggregateId,
                                              Command (exec), Zero (zero))
